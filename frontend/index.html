@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Captioning Multilingue</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #b0bec5 100%);
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .container {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 10px;
+        max-width: 800px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    h1 {
+        text-align: center;
+        color: #1e3c72;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #607d8b;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+    }
+
+    .upload-section {
+        border: 3px dashed #90a4ae;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        background: #f5f7fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 30px;
+    }
+
+    .upload-section:hover {
+        border-color: #1e88e5;
+        background: #eef3f8;
+    }
+
+    .upload-section.dragover {
+        border-color: #1565c0;
+        background: #e3f2fd;
+        transform: scale(1.02);
+    }
+
+    .upload-icon {
+        font-size: 4em;
+        color: #1e88e5;
+        margin-bottom: 15px;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .upload-text {
+        color: #1e88e5;
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .upload-subtext {
+        color: #90a4ae;
+        font-size: 0.9em;
+    }
+
+    .preview-section {
+        display: none;
+        margin: 30px 0;
+    }
+
+    .preview-section.active {
+        display: block;
+    }
+
+    #imagePreview {
+        width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+    }
+
+    .controls {
+        margin: 30px 0;
+    }
+
+    .control-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        color: #37474f;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 1em;
+    }
+
+    select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #cfd8dc;
+        border-radius: 8px;
+        font-size: 1em;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    select:focus {
+        outline: none;
+        border-color: #1e88e5;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    button {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(30, 136, 229, 0.45);
+    }
+
+    .btn-secondary {
+        background: #eceff1;
+        color: #37474f;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #cfd8dc;
+    }
+
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .result-section {
+        display: none;
+        margin-top: 30px;
+    }
+
+    .result-section.active {
+        display: block;
+    }
+
+    .result-card {
+        background: #f5f7fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+
+    .result-label {
+        color: #1e88e5;
+        font-weight: 600;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .result-text {
+        color: #37474f;
+        font-size: 1.2em;
+        line-height: 1.6;
+    }
+
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .loading.active {
+        display: block;
+    }
+
+    .spinner {
+        border: 4px solid #e0e0e0;
+        border-top: 4px solid #1e88e5;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .error {
+        background: #fbe9e7;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+        display: none;
+    }
+
+    .error.active {
+        display: block;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #1e88e5;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 5px;
+    }
+
+    .info-box p {
+        color: #0d47a1;
+        font-size: 0.95em;
+        line-height: 1.5;
+    }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Image Captioning</h1>
+        <p class="subtitle">Description automatique et multilingue d'images</p>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Cliquez ou glissez une image ici</div>
+            <div class="upload-subtext">PNG, JPG, JPEG (max 10MB)</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <img id="imagePreview" alt="Aperçu de l'image">
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="languageSelect">🌍 Langue de traduction</label>
+                <select id="languageSelect">
+                    <option value="français">Français</option>
+                    <option value="anglais">Anglais (original)</option>
+                    <option value="espagnol">Espagnol</option>
+                    <option value="allemand">Allemand</option>
+                    <option value="italien">Italien</option>
+                    <option value="portugais">Portugais</option>
+                    <option value="arabe">Arabe</option>
+                    <option value="chinois">Chinois</option>
+                    <option value="japonais">Japonais</option>
+                    <option value="russe">Russe</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="generateBtn" disabled>
+                    ✨ Générer la description
+                </button>
+                <button class="btn-secondary" id="resetBtn">
+                    🔄 Réinitialiser
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="loadingSection">
+            <div class="spinner"></div>
+            <p>Analyse de l'image en cours...</p>
+        </div>
+
+        <div class="error" id="errorSection"></div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-card">
+                <div class="result-label">📝 Description originale (Anglais)</div>
+                <div class="result-text" id="originalCaption"></div>
+            </div>
+            <div class="result-card" id="translationCard" style="display:none;">
+                <div class="result-label" id="translationLabel">🌐 Traduction</div>
+                <div class="result-text" id="translatedCaption"></div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>💡 Comment ça marche ?</strong></p>
+            <p>Ce système utilise BLIP pour analyser l'image et générer une description, puis NLLB pour traduire cette description dans la langue de votre choix.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const previewSection = document.getElementById('previewSection');
+        const imagePreview = document.getElementById('imagePreview');
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const languageSelect = document.getElementById('languageSelect');
+        const loadingSection = document.getElementById('loadingSection');
+        const errorSection = document.getElementById('errorSection');
+        const resultSection = document.getElementById('resultSection');
+        const originalCaption = document.getElementById('originalCaption');
+        const translatedCaption = document.getElementById('translatedCaption');
+        const translationCard = document.getElementById('translationCard');
+        const translationLabel = document.getElementById('translationLabel');
+
+        let selectedFile = null;
+
+        // Gestion du clic sur la zone d'upload
+        uploadSection.addEventListener('click', () => fileInput.click());
+
+        // Gestion du drag & drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // Gestion de la sélection de fichier
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Veuillez sélectionner une image valide');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showError('L\'image ne doit pas dépasser 10MB');
+                return;
+            }
+
+            selectedFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                previewSection.classList.add('active');
+                generateBtn.disabled = false;
+                resultSection.classList.remove('active');
+                hideError();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Génération de la description
+        generateBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const targetLanguage = languageSelect.value;
+            
+            loadingSection.classList.add('active');
+            resultSection.classList.remove('active');
+            generateBtn.disabled = true;
+            hideError();
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                // Génération du caption
+                const captionResponse = await fetch(`${API_URL}/api/caption`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!captionResponse.ok) {
+                    throw new Error('Erreur lors de la génération du caption');
+                }
+
+                const captionData = await captionResponse.json();
+                originalCaption.textContent = captionData.caption;
+
+                // Traduction si nécessaire
+                if (targetLanguage !== 'anglais') {
+                    const translationResponse = await fetch(`${API_URL}/api/translate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: captionData.caption,
+                            target_language: targetLanguage
+                        })
+                    });
+
+                    if (!translationResponse.ok) {
+                        throw new Error('Erreur lors de la traduction');
+                    }
+
+                    const translationData = await translationResponse.json();
+                    translatedCaption.textContent = translationData.translated_text;
+                    translationLabel.textContent = `🌐 Traduction (${targetLanguage.charAt(0).toUpperCase() + targetLanguage.slice(1)})`;
+                    translationCard.style.display = 'block';
+                } else {
+                    translationCard.style.display = 'none';
+                }
+
+                resultSection.classList.add('active');
+            } catch (error) {
+                showError('Erreur: ' + error.message + '. Assurez-vous que le serveur API est démarré.');
+            } finally {
+                loadingSection.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        });
+
+        // Réinitialisation
+        resetBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            previewSection.classList.remove('active');
+            resultSection.classList.remove('active');
+            generateBtn.disabled = true;
+            hideError();
+        });
+
+        function showError(message) {
+            errorSection.textContent = message;
+            errorSection.classList.add('active');
+        }
+
+        function hideError() {
+            errorSection.classList.remove('active');
+        }
+
+        // Vérification de la connexion API au chargement
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_URL}/`);
+                if (!response.ok) throw new Error();
+            } catch (error) {
+                showError('⚠️ Impossible de se connecter au serveur API. Assurez-vous qu\'il est démarré sur le port 8000.');
+            }
+        });
+    </script>
+</body>
+</html>
